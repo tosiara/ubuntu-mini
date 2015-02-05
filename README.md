@@ -87,10 +87,9 @@ own!**
 
 ### Supported Network Devices
 
-Note: This list is based upon the kernel and modules available
-[here](http://www.rikomagic.co.uk/forum/viewtopic.php?f=12&t=4055#p11058). You
-will need to look up the adapter you intend to use and see which chipset it is
-using. Then look at the list below to see if the chipset is included.
+Note: You will need to look up the adapter you intend to use and see which
+chipset it is using. Then look at the list below to see if the chipset is
+included.
 
 #### Wired ethernet dongles
 
@@ -325,9 +324,9 @@ so all I can say is good luck.
 
 #### Setting up the build environment
 * Ubuntu x86_64
-    * `sudo apt-get -y install git-core flex bison build-essential gcc-arm-linux-gnueabihf libncurses5-dev zlib1g-dev lib32z1 lib32ncurses5 sharutils lzop`
+    * `sudo apt-get -y install git-core flex bison build-essential gcc-arm-linux-gnueabihf gcc-arm-linux-gnueabi libncurses5-dev zlib1g-dev lib32z1 lib32ncurses5 sharutils lzop`
 * Ubuntu 32 bit
-    * `sudo apt-get -y install git-core flex bison build-essential gcc-arm-linux-gnueabihf libncurses5-dev zlib1g-dev sharutils lzop`
+    * `sudo apt-get -y install git-core flex bison build-essential gcc-arm-linux-gnueabihf gcc-arm-linux-gnueabi libncurses5-dev zlib1g-dev sharutils lzop`
 
 #### Build 3.0.8-alok kernel for RK3066
 * Create build dir
@@ -436,6 +435,9 @@ so all I can say is good luck.
             	return ALIGN(size,SZ_1M);
             }
             ```
+        * Fix dwc_otg: support non DWORD-aligned buffer for DMA:
+            * Extract [otg-fix.tar.gz](https://github.com/sgjava/ubuntu-mini/raw/master/rk3188/otg-fix.tar.gz)
+            * Copy files to Linux3188/drivers/usb/dwc_otg
     * Linuxium
         * `git clone https://github.com/phjanderson/3188-SRC-AP6210.git`
 * Get initramfs
