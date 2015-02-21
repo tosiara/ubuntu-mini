@@ -1,17 +1,17 @@
 ## Ubuntu Mini
 
-Ubuntu Mini is lean and mean Ubuntu for ARM based Android Mini PCs. I started
-off like a lot of others by using [PicUntu](http://ubuntu.g8.net), but I wanted
-granular control of what packages were installed. You can use the pre-built kernels,
-build your own or get a kernel elsewhere. This will give you a lot more flexibility
-for creating customized distributions.
+Ubuntu Mini is lean and mean Ubuntu for ARM based Mini PCs. I started off like a lot
+of others by using [PicUntu](http://ubuntu.g8.net), but I wanted granular control of
+what packages were installed. You can use the pre-built kernels, build your own or
+get a kernel elsewhere. This will give you a lot more flexibility for creating customized
+distributions.
 
 You will need to identify your hardware since even the same brand names may have
 different chipsets. To be safe ask the vendor before buying if possible (a lot of
 newer RK3188 devices really have RK3188T CPUs which have problems with various
-kernels available). I've personally only tested the MK808 and MK-802IV with 8188eu
-and AP6210. In theory, this should work on any ARM device that can boot a Linux
-kernel and mount the root file system.
+kernels available). I've personally only tested the MK808, MK-802IV with
+8188eu/AP6210 and ODROID C1. In theory, this should work on any ARM device that
+can boot a Linux kernel and mount the root file system.
 
 **You assume all the risks that come with flashing an Android device. It's very
 painless and hard to screw up, but if you do brick your Mini PC you are on your
@@ -23,8 +23,9 @@ own!**
 * [Supported Network Devices](#supported-network-devices)
     * [Wired ethernet dongles](#wired-ethernet-dongles)
     * [WiFi Adapters](#wifi-adapters)
-* [Create Ubuntu root filesystem](#create-ubuntu-root-filesystem)
+* [Create Ubuntu root filesystem MK808, MK802IV, etc.](#create-ubuntu-root-filesystem-mk808-mk802iv-etc)
 * [Flash kernel](#flash-kernel)
+* [Create Ubuntu root filesystem ODROID-C1](#create-ubuntu-root-filesystem-odroid-c1)
 * [After you can boot successfully](#after-you-can-boot-successfully)
 * [Build kernel for Linux](#build-kernel-for-linux)
     * [Requirements](#requirements-1)
@@ -38,7 +39,7 @@ own!**
 * [FreeBSD License](#freebsd-license)
 
 ### Requirements
-* Ubuntu 12.04 or Ubuntu 14.04 desktop (I used a VirtualBox VM)
+* Ubuntu 14.04 desktop (X86_64 required for ODROID C1 scripts)
     * Add 8 GB hard disk under Storage using Oracle VM VirtualBox Manager in place of an 8 GB SD card
 * A Mini PC with a Rockchip RK3066 dual core ARM A9 processor. The following are officially supported:
     * Ugoos UG802
@@ -50,6 +51,7 @@ own!**
     * Tronsmart MK908
     * iMito QX1
     * Tronsmart T428    
+* ODROID C1 with a quad core ARM Cortex-A5 processor.
 * A monitor or TV with an available HDMI input (I used a Motorola Lapdock).
 * An OTG USB cable appropriate for your device.
 * A MicroSD of at least 4GB in size to hold the linuxroot filesystem.
@@ -115,7 +117,7 @@ included.
 
 **This is based on Alok Sihna's 3.0.8 kernel**
 
-### Create Ubuntu root filesystem
+### Create Ubuntu root filesystem MK808, MK802IV, etc.
 1. Install packages
     * `sudo su -`
     * `apt-get -y install qemu-user-static binfmt-support debootstrap`
@@ -137,8 +139,6 @@ included.
     * `mount /dev/sdb1 /mnt/tmp`
     * `rm -rf /mnt/tmp/lost+found`
 4. Install Ubuntu
-    * 12.04
-        * `qemu-debootstrap --verbose --variant=minbase --arch=armhf --include=nano precise /mnt/tmp http://ports.ubuntu.com/ubuntu-ports > install.log 2>&1`
     * 14.04
         * `qemu-debootstrap --verbose --variant=minbase --arch=armhf --include=nano trusty /mnt/tmp http://ports.ubuntu.com/ubuntu-ports > install.log 2>&1`
     * `tail install.log`
@@ -153,13 +153,6 @@ included.
     * `chroot /mnt/tmp`
 7. Add apt-sources
     * `nano /etc/apt/sources.list`
-        * 12.04
-        <pre><code>deb http://ports.ubuntu.com/ubuntu-ports/ precise main restricted universe multiverse
-        deb-src http://ports.ubuntu.com/ubuntu-ports/ precise main restricted universe multiverse
-        deb http://ports.ubuntu.com/ubuntu-ports/ precise-updates main restricted universe multiverse
-        deb-src http://ports.ubuntu.com/ubuntu-ports/ precise-updates main restricted universe multiverse
-        deb http://ports.ubuntu.com/ubuntu-ports/ precise-security main restricted universe multiverse
-        deb-src http://ports.ubuntu.com/ubuntu-ports/ precise-security main restricted universe multiverse</code></pre>
         * 14.04
         <pre><code>deb http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted universe multiverse
         deb-src http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted universe multiverse
@@ -176,9 +169,6 @@ included.
         * Select the geographic area in which you live
         * Select the city or region corresponding to your time zone
 10. Add useful packages
-    * 12.04
-        * `apt-get -y install sudo dhcp3-client udev netbase ifupdown iproute openssh-server iputils-ping wget net-tools wireless-tools wpasupplicant ntpdate ntp less tzdata console-tools console-common module-init-tools`
-            * Select keymap from full list
     * 14.04
         * `apt-get -y install sudo isc-dhcp-client udev netbase ifupdown iproute openssh-server iputils-ping wget net-tools wireless-tools wpasupplicant ntpdate ntp less tzdata console-common module-init-tools`
             * Country of origin for the keyboard
@@ -289,9 +279,84 @@ included.
             * `reboot`
             * If SD card is in then Linux boots or else Android boots
 
+### Create Ubuntu root filesystem ODROID-C1
+
+I automated much of [Ubuntu Minimal Image](http://odroid.com/dokuwiki/doku.php?id=en:c1_ubuntu_minimal)
+by using three scripts. My scripts also configure language, timezone and wireless support (disabled by default).
+
+1. Download scripts on Ubuntu Desktop 14.04 x86_64 (VM is fine)
+    * `wget https://raw.githubusercontent.com/sgjava/ubuntu-mini/master/odroid-c1/image.sh`
+    * `wget https://raw.githubusercontent.com/sgjava/ubuntu-mini/master/odroid-c1/minimal.sh`
+    * `wget https://raw.githubusercontent.com/sgjava/ubuntu-mini/master/odroid-c1/finish.sh`
+    * `chmod a+x *.sh`
+2. Create image file
+    * ``export ubuntu=`pwd` ``
+    * `sudo ./image.sh`
+3. Install minimal Ubuntu (this script requires user interaction)
+    * Once image.sh has completed you should see two Files windows open (boot and target)
+    * Copy minimal.sh to chroot /root from a new terminal window
+        * Pick different language (default is English)
+            * Find `apt-get -y install language-pack-en-base` in minimal.sh and change to desired language pack
+        * `sudo cp minimal.sh /home/<username>/ubuntu/target/root/.`
+    * chroot
+        * `cd ubuntu`
+        * `sudo chroot target`
+        * `cd /root`
+        * `chmod a+x minimal.sh`
+        * `./minimal.sh`
+            * Geographic area: Select from list
+            * Time zone: Select from list
+            * Country of origin for the keyboard: Select from list
+            * Keyboard layout: Select from list
+            * Configuring console-data: &lt;OK&gt;
+            * Policy for handling keymaps: Select keymap from full list: &lt;OK&gt;
+            * Keymap: Select keymay then &lt;OK&gt;
+            * root user: Enter new UNIX password: 
+            * root user: Retype new UNIX password:
+            * test user: Enter new UNIX password: 
+            * test user: Retype new UNIX password: 
+            * Full Name []: Test User
+            * Room Number []: Press Enter 
+            * Work Phone []: Press Enter
+            * Home Phone []: Press Enter
+            * Other []: Press Enter
+            * Is the information correct? [Y/n] Press Enter  
+        * `exit`
+3. Finish up
+    * Unmount image file
+        * `cd ..`
+        * `sudo ./finish.sh`
+        * If there's a `device is busy` error try the following:
+            * `sudo reboot`
+    * Flash image (change sdX to SD card device)
+        * Make sure all partitions have been deleted on SD card (use gparted)
+        * `sudo fdisk -l` Find your SD card
+        * `sudo dd if=image.img of=/dev/sdX bs=1M`
+        * Eject SD
+    * boot.ini changes
+        * Place SD in PC
+        * Edit boot.ini from boot mount
+            * I changed the screen resolution to work with my Lapdock
+    * Place SD card in ODROID-C1, boot, install u-boot (this hosed my wifi, so you may want to skip)
+        * `sudo apt-get install u-boot`
+        * `sudo reboot`
+    * `nano /etc/network/interfaces.d/wlan0`        
+        * Configure wlan0 if needed
+        <pre><code>auto wlan0
+        iface wlan0 inet static
+        address 192.168.1.69
+        netmask 255.255.255.0
+        gateway 192.168.1.1
+        wpa-ssid ssid
+        wpa-psk password</code></pre>
+    * `nano /etc/hosts`
+        * Add your host
+    * `nano /etc/resolv.conf`
+        * Change to your DNS server(s)
+        
 ### After you can boot successfully
-* If you see `Skipping mounting / since Plymouth is not available` and your file
-  system is read only, do this one time:
+* If you see `Skipping mounting / since Plymouth is not available` on RK3066 or RK3188
+  and your file system is read only, do this one time:
     * `sudo mount -o remount,rw /`
     * `sudo reboot`
 * RK3066 device CPU temperature in celsius
@@ -303,16 +368,6 @@ included.
     * `sudo cpufreq-info -w` current speed
     * `sudo cpufreq-set -r --max 1.2GHz` maximum frequency
     * `sudo cpufreq-set -r --min 1.2GHz` minimum frequency
-* Force time sync (for some reason ntp doesn't set time on boot)
-    * `sudo nano /etc/rc.local`
-    * <pre><code>( /etc/init.d/ntp stop
-      until ping -nq -c3 8.8.8.8; do
-      echo "Waiting for network..."
-      done
-      ntpdate -s time.nist.gov
-      /etc/init.d/ntp start )&</code></pre>
-* Install desktop for you GUI lovers
-    * `sudo apt-get install xubuntu-desktop`
 
 ### Build kernel for Linux
 I had issues with the MK808 and internal wireless network building my own
@@ -320,7 +375,7 @@ kernels. From various forum postings it looks like others have had success,
 so all I can say is good luck.
 
 #### Requirements
-* Ubuntu 12.04 desktop (I used a VirtualBox VM)
+* Ubuntu 14.04 desktop (I used a VirtualBox VM)
 
 #### Setting up the build environment
 * Ubuntu x86_64
@@ -478,6 +533,7 @@ so all I can say is good luck.
 * [Installing Linux on a RK3066 based device](http://linux.autostatic.com/installing-linux-on-a-rk3066-based-device)
 * [Ubuntu Without CD](https://help.ubuntu.com/community/Installation/FromLinux#Without_CD)
 * [Your own official Linux distro in a SD card (for ARM)](http://hwswbits.blogspot.com/2013/11/your-own-official-linux-distro-in-sd.html)
+* [ODROID C1 Ubuntu Minimal Image](http://odroid.com/dokuwiki/doku.php?id=en:c1_ubuntu_minimal)
 
 ### FreeBSD License
 Copyright (c) Steven P. Goldsmith
