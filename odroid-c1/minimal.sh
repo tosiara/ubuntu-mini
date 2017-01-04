@@ -130,5 +130,5 @@ dm=$(((elapsedtimesec / 60) % 60))
 dh=$((elapsedtimesec / 3600))
 displaytime=$(printf "%02d:%02d:%02d" $dh $dm $ds)
 
-log "Elapse time: $displaytime\n"
+log "Elapsed time: $displaytime\n"
 exit 0

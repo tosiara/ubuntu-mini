@@ -10,7 +10,7 @@ You will need to identify your hardware since even the same brand names may have
 different chipsets. To be safe ask the vendor before buying if possible (a lot of
 newer RK3188 devices really have RK3188T CPUs which have problems with various
 kernels available). I've personally only tested the MK808, MK-802IV with
-8188eu/AP6210 and ODROID C1. In theory, this should work on any ARM device that
+8188eu/AP6210 and ODROID C1/C1+. In theory, this should work on any ARM device that
 can boot a Linux kernel and mount the root file system.
 
 **You assume all the risks that come with flashing an Android device. It's very
@@ -25,7 +25,7 @@ own!**
     * [WiFi Adapters](#wifi-adapters)
 * [Create Ubuntu root filesystem MK808, MK802IV, etc.](#create-ubuntu-root-filesystem-mk808-mk802iv-etc)
 * [Flash kernel](#flash-kernel)
-* [Create Ubuntu root filesystem ODROID-C1](#create-ubuntu-root-filesystem-odroid-c1)
+* [Create Ubuntu root filesystem ODROID-C1/C1+](#create-ubuntu-root-filesystem-odroid-c1c1)
 * [After you can boot successfully](#after-you-can-boot-successfully)
 * [Build kernel for Linux](#build-kernel-for-linux)
     * [Requirements](#requirements-1)
@@ -39,7 +39,7 @@ own!**
 * [FreeBSD License](#freebsd-license)
 
 ### Requirements
-* Ubuntu 14.04 desktop (X86_64 required for ODROID C1 scripts)
+* Ubuntu 14.04 desktop (X86_64 required for ODROID C1/C1+ scripts)
     * Add 8 GB hard disk under Storage using Oracle VM VirtualBox Manager in place of an 8 GB SD card
 * A Mini PC with a Rockchip RK3066 dual core ARM A9 processor. The following are officially supported:
     * Ugoos UG802
@@ -51,7 +51,7 @@ own!**
     * Tronsmart MK908
     * iMito QX1
     * Tronsmart T428    
-* ODROID C1 with a quad core ARM Cortex-A5 processor.
+* ODROID C1/C1+ with a quad core ARM Cortex-A5 processor.
 * A monitor or TV with an available HDMI input (I used a Motorola Lapdock).
 * An OTG USB cable appropriate for your device.
 * A MicroSD of at least 4GB in size to hold the linuxroot filesystem.
@@ -279,10 +279,11 @@ included.
             * `reboot`
             * If SD card is in then Linux boots or else Android boots
 
-### Create Ubuntu root filesystem ODROID-C1
+### Create Ubuntu root filesystem ODROID-C1/C1+
 
 I automated much of [Ubuntu Minimal Image](http://odroid.com/dokuwiki/doku.php?id=en:c1_ubuntu_minimal)
 by using three scripts. My scripts also configure language, timezone and wireless support (disabled by default).
+Tested on 01/19/2016.
 
 1. Download scripts on Ubuntu Desktop 14.04 x86_64 (VM is fine)
     * `wget https://raw.githubusercontent.com/sgjava/ubuntu-mini/master/odroid-c1/image.sh`
@@ -337,9 +338,7 @@ by using three scripts. My scripts also configure language, timezone and wireles
         * Place SD in PC
         * Edit boot.ini from boot mount
             * I changed the screen resolution to work with my Lapdock
-    * Place SD card in ODROID-C1, boot, install u-boot (this hosed my wifi, so you may want to skip)
-        * `sudo apt-get install u-boot`
-        * `sudo reboot`
+            * For headless server setenv vpu "0" and setenv hdmioutput "0" to save about 140MB RAM. Do this after you can boot successfully and no longer need the display to debug.
     * `nano /etc/network/interfaces.d/wlan0`        
         * Configure wlan0 if needed
         <pre><code>auto wlan0
@@ -361,13 +360,30 @@ by using three scripts. My scripts also configure language, timezone and wireles
     * `sudo reboot`
 * RK3066 device CPU temperature in celsius
     * `cat /sys/module/tsadc/parameters/temp* | cut -d " " -f1,2`
-* Install cpufreq    
+* ODROID C1/C1+ device CPU temperature in celsius (I had to devide by 1000)
+    * `cat /sys/devices/virtual/thermal/thermal_zone0/temp`
+* ODROID C1/C1+ device CPU frequency
+    * `cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq`
+* Install cpufreq
     * `sudo apt-get install cpufrequtils`
     * `cpufreq-info -o` current settings
     * `cpufreq-info -s` list of speeds you can set
     * `sudo cpufreq-info -w` current speed
     * `sudo cpufreq-set -r --max 1.2GHz` maximum frequency
     * `sudo cpufreq-set -r --min 1.2GHz` minimum frequency
+* ODROID C1/C1+ set CPU frequency on boot
+    * Disable ondemand governor `sudo update-rc.d ondemand disable`
+    * `sudo nano /etc/default/cpufrequtils` settings on start up (this is for ODROID C1 for example)
+        * Add `ENABLE="true"`
+        * Add `GOVERNOR="conservative"`
+        * Add `MAX_SPEED=1632000`
+        * Add `MIN_SPEED=96000`
+* If fsck hangs boot process make it automatic
+    * `sudo nano /etc/default/rcS`
+        * Uncomment FSCKFIX and set to yes
+* Boot fast
+    * `sudo nano /etc/init/failsafe.conf`
+        * Comment out all `sleep` commands
 
 ### Build kernel for Linux
 I had issues with the MK808 and internal wireless network building my own
@@ -533,7 +549,7 @@ so all I can say is good luck.
 * [Installing Linux on a RK3066 based device](http://linux.autostatic.com/installing-linux-on-a-rk3066-based-device)
 * [Ubuntu Without CD](https://help.ubuntu.com/community/Installation/FromLinux#Without_CD)
 * [Your own official Linux distro in a SD card (for ARM)](http://hwswbits.blogspot.com/2013/11/your-own-official-linux-distro-in-sd.html)
-* [ODROID C1 Ubuntu Minimal Image](http://odroid.com/dokuwiki/doku.php?id=en:c1_ubuntu_minimal)
+* [ODROID C1/C1+ Ubuntu Minimal Image](http://odroid.com/dokuwiki/doku.php?id=en:c1_ubuntu_minimal)
 
 ### FreeBSD License
 Copyright (c) Steven P. Goldsmith
